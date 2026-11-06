@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Lead {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  phone     String?
+  company   String?
+  segment   String?  // Ex: "Logística", "Financeiro", "Comercial", "Outro"
+  message   String?
+  source    String?  @default("site") // Ex: "contato_hero", "contato_banner", "whatsapp"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  slug        String   @unique // ex: "torre-logistica", "dre-financeiro", "performance-comercial"
+  title       String
+  description String
+  price       Decimal  @default(0.00)
+  active      Boolean  @default(true)
+  fileKey     String?  // Chave do arquivo .pbix no Blob Storage da Vertra
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  orders      Order[]
+}
+
+model Order {
+  id              String      @id @default(uuid())
+  orderNumber     String      @unique // Ex: PONCI-1001
+  customerName    String
+  customerEmail   String
+  customerPhone   String?
+  customerCpfCnpj String?
+  totalAmount     Decimal
+  status          OrderStatus @default(PENDING) // PENDING, PAID, CANCELED, REFUNDED
+  productId       String?
+  product         Product?    @relation(fields: [productId], references: [id])
+  paymentMethod   String?     // "PIX", "CREDIT_CARD", etc.
+  paymentId       String?     // ID do pagamento no gateway
+  downloadToken   String?     @unique // Token único para download seguro do .pbix
+  downloadCount   Int         @default(0)
+  expiresAt       DateTime?
+  paidAt          DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELED
+  REFUNDED
+}
